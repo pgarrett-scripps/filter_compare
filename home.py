@@ -4,6 +4,8 @@ from io import StringIO
 import pandas as pd
 import streamlit as st
 import serenipy.dtaselectfilter as filter
+import plotly.express as px
+
 
 st.title('DTASelect-filter compare!')
 
@@ -54,3 +56,17 @@ if st.button(label='Run'):
     st.dataframe(df)
 
     st.download_button(label='Download Table', data=df.to_csv(), file_name='filter_compare.csv')
+
+    fig = px.bar(df, x="file", y=['target_protein_locuses', 'target_protein_groups', 'target_stripped_peptides',
+                                  'target_charged_stripped_peptides', 'target_peptides'], barmode="group",
+                 text_auto=True, title='Target Protein & Peptide Stats')
+    st.plotly_chart(fig)
+
+    fig = px.bar(df, x="file", y=['decoy_protein_locuses', 'decoy_protein_groups', 'decoy_stripped_peptides',
+                                  'decoy_charged_stripped_peptides', 'decoy_peptides'], barmode="group",
+                 text_auto=True, title='Decoy Protein & Peptide Stats')
+    st.plotly_chart(fig)
+
+    fig = px.bar(df, x="file", y=['target_protein_coverage', 'decoy_protein_coverage'], barmode="group", text_auto=True,
+                 title='Target vs Decoy Protein Coverage')
+    st.plotly_chart(fig)
