@@ -1,3 +1,4 @@
+import math
 from statistics import mean
 from io import StringIO
 
@@ -58,6 +59,10 @@ if st.button(label='Run :runner:'):
         decoy_protein_coverage = mean(
             [protein_line.sequence_coverage for result in decoy_results for protein_line in result.protein_lines])
 
+        protein_fdr = round(decoy_protein_groups/(decoy_protein_groups + target_protein_groups)*100,4)
+        peptide_fdr = round(decoy_peptides / (decoy_peptides + target_peptides) * 100, 4)
+        spectra_fdr = round(decoy_spectra / (decoy_spectra + target_spectra) * 100, 4)
+
         d = {'file': file.name[:-4],
              'target_protein_locuses': target_protein_locuses,
              'target_protein_groups': target_protein_groups,
@@ -75,10 +80,14 @@ if st.button(label='Run :runner:'):
              'decoy_spectra': decoy_spectra,
              'decoy_protein_coverage': decoy_protein_coverage,
 
-             'protein_fdr': round(decoy_protein_groups/(decoy_protein_groups + target_protein_groups)*100,4),
-             'peptide_fdr': round(decoy_peptides/(decoy_peptides + target_peptides)*100,4),
-             'spectra_fdr': round(decoy_spectra/(decoy_spectra + target_spectra)*100,4),
-        }
+             'protein_fdr': protein_fdr,
+             'peptide_fdr': peptide_fdr,
+             'spectra_fdr': spectra_fdr,
+
+             'fdr_adj_protein_groups': math.floor(target_protein_groups - target_protein_groups*protein_fdr/100),
+             'fdr_adj_peptides': math.floor(target_peptides - target_peptides * peptide_fdr / 100),
+             'fdr_adj_spectra': math.floor(target_spectra - target_spectra * spectra_fdr / 100),
+             }
         data.append(d)
 
     df = pd.DataFrame(data)
@@ -88,13 +97,13 @@ if st.button(label='Run :runner:'):
     fig = px.bar(df, x="file", y=['target_protein_locuses', 'target_protein_groups', 'target_stripped_peptides',
                                   'target_charged_stripped_peptides', 'target_peptides', 'target_spectra'],
                  barmode="group",
-                 text_auto=True, title='Target Protein & Peptide Stats')
+                 text_auto=True, title='Target Protein & Peptide & Spectra Stats')
     st.plotly_chart(fig)
 
     fig = px.bar(df, x="file", y=['decoy_protein_locuses', 'decoy_protein_groups', 'decoy_stripped_peptides',
                                   'decoy_charged_stripped_peptides', 'decoy_peptides', 'decoy_spectra'],
                  barmode="group",
-                 text_auto=True, title='Decoy Protein & Peptide Stats')
+                 text_auto=True, title='Decoy Protein & Peptide & Spectra Stats')
     st.plotly_chart(fig)
 
     fig = px.bar(df, x="file", y=['target_protein_coverage', 'decoy_protein_coverage'], barmode="group", text_auto=True,
@@ -103,4 +112,9 @@ if st.button(label='Run :runner:'):
 
     fig = px.bar(df, x="file", y=['protein_fdr', 'peptide_fdr', 'spectra_fdr'], barmode="group", text_auto=True,
                  title='Protein & Peptide & Spectra FDR')
+    st.plotly_chart(fig)
+
+    fig = px.bar(df, x="file", y=['fdr_adj_protein_groups', 'fdr_adj_peptides', 'fdr_adj_spectra'],
+                 barmode="group",
+                 text_auto=True, title='fdr adjusted Protein & Peptide & Spectra counts')
     st.plotly_chart(fig)
