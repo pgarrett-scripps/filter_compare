@@ -20,7 +20,12 @@ if st.button(label='Run :runner:'):
 
     data = []
     for file in files:
-        _, _, results, _ = filter.from_dta_select_filter(StringIO(file.getvalue().decode('utf-8')))
+        name = file.name.split('.txt')[0]
+        if len(file.name.split('_DTASelect-filter.txt')) > 1:
+            name = file.name.split('_DTASelect-filter.txt')[0]
+        elif len(file.name.split('DTASelect-filter.txt')) > 1:
+            name = file.name.split('DTASelect-filter.txt')[0]
+        _, _, results, end_lines = filter.from_dta_select_filter(StringIO(file.getvalue().decode('utf-8')))
         target_results = [result for result in results if
                           any(['Reverse_' not in protein_line.locus_name for protein_line in result.protein_lines])]
         target_protein_locuses = len(
@@ -35,8 +40,7 @@ if st.button(label='Run :runner:'):
         target_peptides = len(
             {(peptide_line.charge, peptide_line.sequence[2:-2]) for result in target_results for peptide_line in
              result.peptide_lines})
-        target_spectra = len(
-            {peptide_line.file_name for result in target_results for peptide_line in result.peptide_lines})
+        target_spectra = sum([result.protein_lines[0].spectrum_count for result in target_results])
         target_protein_coverage = mean(
             [protein_line.sequence_coverage for result in target_results for protein_line in result.protein_lines])
 
@@ -54,8 +58,7 @@ if st.button(label='Run :runner:'):
         decoy_peptides = len(
             {(peptide_line.charge, peptide_line.sequence[2:-2]) for result in decoy_results for peptide_line in
              result.peptide_lines})
-        decoy_spectra = len(
-            {peptide_line.file_name for result in decoy_results for peptide_line in result.peptide_lines})
+        decoy_spectra = sum([result.protein_lines[0].spectrum_count for result in decoy_results])
         decoy_protein_coverage = mean(
             [protein_line.sequence_coverage for result in decoy_results for protein_line in result.protein_lines])
 
@@ -63,7 +66,7 @@ if st.button(label='Run :runner:'):
         peptide_fdr = round(decoy_peptides / (decoy_peptides + target_peptides) * 100, 4)
         spectra_fdr = round(decoy_spectra / (decoy_spectra + target_spectra) * 100, 4)
 
-        d = {'file': file.name[:-4],
+        d = {'file': name,
              'target_protein_locuses': target_protein_locuses,
              'target_protein_groups': target_protein_groups,
              'target_stripped_peptides': target_stripped_peptides,
@@ -87,6 +90,7 @@ if st.button(label='Run :runner:'):
              'fdr_adj_protein_groups': math.floor(target_protein_groups - target_protein_groups*protein_fdr/100),
              'fdr_adj_peptides': math.floor(target_peptides - target_peptides * peptide_fdr / 100),
              'fdr_adj_spectra': math.floor(target_spectra - target_spectra * spectra_fdr / 100),
+
              }
         data.append(d)
 
@@ -118,3 +122,5 @@ if st.button(label='Run :runner:'):
                  barmode="group",
                  text_auto=True, title='fdr adjusted Protein & Peptide & Spectra counts')
     st.plotly_chart(fig)
+
+
