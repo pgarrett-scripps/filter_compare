@@ -7,6 +7,11 @@ import streamlit as st
 import serenipy.dtaselectfilter as filter
 import plotly.express as px
 
+st.set_page_config(
+    page_title="FilterCompare",
+    layout="wide"
+)
+
 st.title('DTASelect-filter compare! :bar_chart:')
 
 files = st.file_uploader(label='DTASelect-filter files', type='.txt', accept_multiple_files=True)
@@ -95,7 +100,7 @@ if st.button(label='Run :runner:'):
         data.append(d)
 
     df = pd.DataFrame(data)
-    st.table(df)
+    st.dataframe(df)
     st.download_button(label='Download Table', data=df.to_csv(), file_name='filter_compare.csv')
 
     fig = px.bar(df, x="file", y=['target_protein_locuses', 'target_protein_groups', 'target_stripped_peptides',
